@@ -22,17 +22,15 @@ void scan(){
     printf("Failed to open the file\n");
   }
 
-
   char everyChar[100];
   char ch;
   for(int i = 0; (ch = fgetc(fp)) != EOF; i++) {
     if(ch != '\n'){
       everyChar[i] = ch;
-      i++;
     } else {
       everyChar[i] = ' ';
-      i++;
     }
+    i++;
   }
 
   for(int i = 0; everyChar[i] != '\0'; i++) {
