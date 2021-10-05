@@ -1,14 +1,21 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-void scan();
+char * scan(void);
 
 int main(void)
 {
-  scan();
+  char * myString = scan();
+
+  for(int i = 0; myString[i] != '\0'; i++) {
+    printf("%c", myString[i]);
+  }
+
+  printf("\n");
   return 0;
 }
 
-void scan(){
+char * scan(void){
 
   char name[20];
   printf("Enter file name: ");
@@ -22,7 +29,7 @@ void scan(){
     printf("Failed to open the file\n");
   }
 
-  char everyChar[100];
+  char *everyChar = malloc(sizeof(100));
   char ch;
   for(int i = 0; (ch = fgetc(fp)) != EOF; i++) {
     if(ch != '\n'){
@@ -30,13 +37,7 @@ void scan(){
     } else {
       everyChar[i] = ' ';
     }
-    i++;
   }
 
-  for(int i = 0; everyChar[i] != '\0'; i++) {
-    printf("%c", everyChar[i]);
-    i++;
-  }
-
-   printf("\n");
+  return everyChar;
 }
