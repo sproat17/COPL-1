@@ -1,3 +1,5 @@
-dsdfs
-sdf
-/* /e dew
+read //read
+write
+/*65
+*/ * 5.6
+54.6 5
