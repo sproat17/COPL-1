@@ -2,164 +2,174 @@
 #include <stdlib.h>
 #include <ctype.h>
 #include <string.h>
-#include <sys/stat.h>
 
-char ** scan(char *everyChar);
+char * scan(char ch);
+void search(void);
+int fpeek(void);
 int j = 0;
-char *tokens[16];
-int size;
+char * tokens[16];
+char name[20];
+FILE * fp;
 
-int main(void)
-{
-  char name[20];
+int main(void) {
   printf("Scanner ");
   scanf("%s", name);
 
-  FILE *fp;
-  fp  = fopen (name, "r");
+  fp = fopen(name, "r");
 
-  while (fp == NULL){
+  while (fp == NULL) {
     printf("File %s does not exist\n", name);
     printf("Scanner ");
     scanf("%s", name);
-    fp  = fopen (name, "r");
+    fp = fopen(name, "r");
   }
 
-  struct stat st;
-  stat(name, &st);
-  size = st.st_size;
+  search();
 
-  char *everyChar = malloc(size);
-
-  char ch;
-  for(int i = 0; (ch = fgetc(fp)) != EOF; i++) {
-      everyChar[i] = ch;
-  }
-
-  char ** token = scan(everyChar);
-  for(int i = 0; i < j; i++){
-    printf("%s ", token[i]);
+  for (int i = 0; i < j; i++) {
+    printf("%s ", tokens[i]);
   }
 
   printf("\n");
   return 0;
 }
-
-void error(){
-  printf("error\n");
-  exit(0);
+void search(void) {
+  char ch;
+  for (;
+    (ch = fgetc(fp)) != EOF;) {
+    tokens[j] = scan(ch);
+  }
 }
 
-char ** scan(char *everyChar){
+int fpeek(void) {
+  int c = getc(fp);
+  ungetc(c, fp);
+  return c;
+}
 
-  char *current = malloc(sizeof(64));
-  for(int i = 0; i < size; i++){
-    int k = 0;
-    switch(everyChar[i]){
-      case ' ':
-        break;
-      case '\n':
-        break;
-      case '/':
-        if(everyChar[i+1] == '/'){
-          while(everyChar[i+1] != '\n'){
-            i++;
-          }
-          break;
-        } else if(everyChar[i+1] != '*'){
-          tokens[j] = "division";
-          j++;
-          break;
-        }
-        i++;
-        while((everyChar[i] != '*') | (everyChar[i] != '/')){
-          if(everyChar[i] == '/'){
-            break;
-          }
-          i++;
-        }
+void next(void) {
+  fseek(fp, 1, SEEK_CUR);
+}
+
+void error(void) {
+  printf("error\n");
+  exit(1);
+}
+
+char * scan(char ch) {
+
+  switch (ch) {
+  case ' ':
+    break;
+  case '\n':
+    break;
+  case '/':
+    if (fpeek() == '/') {
+      while (fpeek() != '\n') {
+        next();
+      }
       break;
-      case '(':
-        tokens[j] = "lparen";
-        j++;
+    } else if (fpeek() != '*') {
+      j++;
+      return "division";
+      break;
+    }
+    while ((fpeek() != '*') | (fpeek() != '/') | (fpeek() != EOF)) {
+      next();
+      if ((fpeek() == '/') | (fpeek() == EOF)) {
+        next();
         break;
-      case ')':
-        tokens[j] = "rparen";
-        j++;
-        break;
-      case '+':
-        tokens[j] = "plus";
-        j++;
-        break;
-      case '-':
-        tokens[j] = "minus";
-        j++;
-        break;
-      case ':':
-        if(everyChar[i+1] == '='){
-          tokens[j] = "assign";
-          j++;
-          break;
-        } else {
-          error();
-        }
-        break;
-      case '*':
-        tokens[j] = "times";
-        j++;
-        break;
-      case '.':
-        if(isdigit(everyChar[i+1])){
-          i++;
-          tokens[j] = "number";
-          j++;
-        } else {
-          i++;
-          error();
-        }
-        while(isdigit(everyChar[i+1])){
-            i++;
-        }
-        break;
-      default:
-        if(isdigit(everyChar[i])){
-          tokens[j] = "number";
-          j++;
-          while((isdigit(everyChar[i+1])) | (everyChar[i+1] == '.')){
-            i++;
-            if(everyChar[i] == '.'){
-              i++;
-              while(isdigit(everyChar[i])){
-                  i++;
-              }
-              break;
-            }
-          }
-
-          break;
-        } else if(isalpha(everyChar[i])){
-            while((isalpha(everyChar[i])) | (isdigit(everyChar[i]))){
-              current[k] = everyChar[i];
-              i++;
-              k++;
-            }
-            if(!strcmp(current, "read")){
-              tokens[j] = "read";
-              j++;
-            }
-            if(!strcmp(current, "write")){
-              tokens[j] = "write";
-              j++;
-            }
-            if((strcmp(current, "write")) && (strcmp(current, "read"))){
-              tokens[j] = "id";
-              j++;
-            }
-            memset(current, 0, strlen(current));
-            break;
-        }
-        error();
       }
     }
-  return tokens;
+    break;
+  case '(':
+    j++;
+    return "lparen";
+    break;
+  case ')':
+    j++;
+    return "rparen";
+    break;
+  case '+':
+    j++;
+    return "plus";
+    break;
+  case '-':
+    j++;
+    return "minus";
+    break;
+
+  case ':':
+    if (fpeek() == '=') {
+      j++;
+      return "assign";
+      break;
+    } else {
+      error();
+    }
+    break;
+  case '*':
+    j++;
+    return "times";
+    break;
+
+  case '.':
+    if (isdigit(fpeek())) {
+      next();
+      j++;
+      return "number";
+    } else {
+      error();
+    }
+    while (isdigit(fpeek())) {
+      next();
+    }
+    break;
+  default:
+    if (isdigit(ch)) {
+      while ((isdigit(fpeek())) | (fpeek() == '.')) {
+        next();
+        if (fpeek() == '.') {
+          next();
+          while (isdigit(fpeek())) {
+            next();
+          }
+          j++;
+          return "number";
+        }
+      }
+      j++;
+      return "number";
+
+    } else if (isalpha(ch)) {
+
+      char * longest = malloc(sizeof(64));
+      int k = 0;
+      longest[k] = ch;
+      k++;
+      while (isalpha(fpeek()) | (isdigit(fpeek()))) {
+        longest[k] = fpeek();
+        next();
+        k++;
+      }
+      if (!strcmp(longest, "read")) {
+        j++;
+        return "read";
+      }
+      if (!strcmp(longest, "write")) {
+        j++;
+        return "write";
+      }
+      if ((strcmp(longest, "write")) && (strcmp(longest, "read"))) {
+        j++;
+        return "id";
+      }
+      memset(longest, 0, strlen(longest));
+      break;
+    }
+
+    error();
+  }
+  return "error\n";
+  exit(1);
 }
